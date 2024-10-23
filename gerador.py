@@ -14,10 +14,19 @@ class Message:
         self.seq = seq
         self.tipo = tipo
         self.valor = valor
+        
+categorias = {
+    "esportes": 1,
+    "novidades da internet": 2,
+    "eletrônicos": 3,
+    "política": 4,
+    "negócios": 5,
+    "viagens": 6
+}
 
 def create_rand_num(min_value, max_value) -> int:
     """Gera um número aleatório entre o valor mínimo e máximo fornecido."""
-    
+
     return random.randint(min_value, max_value)
 
 def send_udp_message(sock, message):
@@ -31,44 +40,50 @@ def send_udp_message(sock, message):
         print(f"Error sending message: {e}")
         
 
-def gerador_thread(seq, tipos):
-    """Função para rodar o gerador e enviar mensagens continuamente."""
-    gerador_instance = gerador.Gerador(
-        sport="sport" in tipos, 
-        news="news" in tipos, 
-        eletronic="eletronic" in tipos, 
-        policy="policy" in tipos, 
-        business="business" in tipos, 
-        travel="travel" in tipos
-    )
+def gera_info_tread(seq, tipo, VALOR_MAX, VALOR_MIN, T_MAX, T_MIN):
+    """Função para criar o gerador e enviar mensagens continuamente."""
     
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    
+    
 
-    while True:
-        tipo = random.choice(tipos)
-        valor = create_rand_num(100, 1000)
-        message = Message(seq, tipo, valor)
-        send_udp_message(sock, message)
-        seq += 1
-        time.sleep(5)
+
+def conf_gerador(i, tipos = [1,2,3,4,5,6]):
+    print('New Gerador')
+        
+    for t in tipos:
+        tmin = create_rand_num(1,10)
+        tmax = create_rand_num(1,10)
+        vmax = create_rand_num(1,200)
+        threading.Thread(target=gera_info_tread, args=(None, t, vmax, tmax, tmin))
+
+            
+    
 
 def main():
-    num_geradores = int(input("Informe a quantidade de geradores a serem criados: "))
-
-    threads = []
+    while True:
+        try:
+            num_geradores = int(input("Informe a quantidade de geradores a serem criados: "))
+            break 
+        except ValueError:
+            print("Por favor, insira um número válido.")
 
     for i in range(num_geradores):
+        print(f'Gerando os tipos dos geradores:')
+        print(f'Ou pressione Enter para gerar todos os valores aleatórios.')
+        
+        qtd_aleatoria = create_rand_num(1, 6)
+        tipos_aleatorios = random.sample(list(categorias.keys()), qtd_aleatoria)
+        tipos = [categorias[tipo] for tipo in tipos_aleatorios]
+            
+        threading.Thread(target=conf_gerador, args=(i, tipos))
 
-        tipos = input(f"Informe os tipos para o Gerador {i+1} separados por vírgula (ex: sport,news,travel): ").split(',')
-        tipos = [tipo.strip() for tipo in tipos]
+
         
 
-        thread = threading.Thread(target=gerador_thread, args=(i, tipos))
-        threads.append(thread)
-        thread.start()
 
-    for thread in threads:
-        thread.join()
-
+        
+        
+        
+        
 if __name__ == "__main__":
     main()
