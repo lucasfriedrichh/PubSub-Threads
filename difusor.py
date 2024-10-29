@@ -15,6 +15,9 @@ udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 orig = (HOST, PORT)
 udp.bind(orig)
 
+
+
+
 def main():
     seq_numbers = {}
 
