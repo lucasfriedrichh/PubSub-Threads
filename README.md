@@ -1,4 +1,8 @@
-# {TDE - Sockets e Threads - Pub Sub}
+# TDE - Sockets e Threads - Pub Sub
+
+### Lucas Friedrich - 168238
+### Leonardo Salinet - 179770
+
 
 Projeto desenvolvido utilizando Python, com a biblioteca Threading.
 
