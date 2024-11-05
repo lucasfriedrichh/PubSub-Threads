@@ -67,7 +67,10 @@ def main():
     while True:
         try:
             num_geradores = int(input("Informe a quantidade de geradores a serem criados: "))
-            break 
+            if 0 <= num_geradores <= 6:
+                break
+            else:
+                print("Por favor, insira um número entre 0 e 6.")
         except ValueError:
             print("Por favor, insira um número válido.")
 
