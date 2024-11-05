@@ -5,16 +5,16 @@ import time
 from message import Message, ControlMessage
 
 # Global variables
-message_lists = {tipo: [] for tipo in range(1, 7)}  # Messages per type (types 1 to 6)
-message_conditions = {tipo: threading.Condition() for tipo in range(1, 7)}  # Condition per type
-stop_event = threading.Event()  # Event to signal threads to stop
-seq_numbers = {tipo: 0 for tipo in range(1, 7)}  # Per-type sequence numbers
-seq_locks = {tipo: threading.Lock() for tipo in range(1, 7)}  # Lock per type for seq_numbers
+message_lists = {tipo: [] for tipo in range(1, 7)} 
+message_conditions = {tipo: threading.Condition() for tipo in range(1, 7)}
+stop_event = threading.Event()
+seq_numbers = {tipo: 0 for tipo in range(1, 7)}  
+seq_locks = {tipo: threading.Lock() for tipo in range(1, 7)}
 
 def listener_thread():
-    """Thread that listens to messages from geradores and saves them into per-type lists."""
+    """Thread that listens to messages from generators and saves them into per-type lists."""
     HOST = ''
-    PORT = 1682  # UDP port for receiving messages from geradores
+    PORT = 1682  # UDP port for receiving messages from generators
 
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp.bind((HOST, PORT))
@@ -27,57 +27,57 @@ def listener_thread():
                 message = pickle.loads(msg_bytes)
                 tipo = message.tipo
 
-                # Update per-type sequence number
+                # Update the per-type sequence number
                 with seq_locks[tipo]:
                     seq = seq_numbers[tipo]
                     seq_numbers[tipo] += 1
                 message.seq = seq  # Update the sequence number in the message
 
-                print(f"Received message from {client}")
-                print(f"Message: seq={message.seq}, tipo={message.tipo}, valor={message.valor}")
+                print(f"Mensagem recebida de {client}")
+                print(f"Mensagem: seq={message.seq}, tipo={message.tipo}, valor={message.valor}")
 
                 # Add the message to the per-type list and notify waiting consumers
                 with message_conditions[tipo]:
                     message_lists[tipo].append(message)
                     message_conditions[tipo].notify_all()  # Notify consumers waiting for this type
             except Exception as e:
-                print(f"An error occurred while processing the message: {e}")
+                print(f"Ocorreu um erro ao processar a mensagem: {e}")
                 continue
         except socket.timeout:
             continue  # Continue the loop to check for stop_event
         except Exception as e:
-            print(f"An error occurred while receiving data: {e}")
+            print(f"Ocorreu um erro ao receber dados: {e}")
             continue
 
     udp.close()
-    print("Listener thread terminated.")
+    print("Thread de escuta terminada.")
 
 def consumer_acceptor_thread():
     """Thread that accepts connections from consumers and creates threads to serve them."""
     HOST = ''
-    PORT = 1683  # TCP port for consumer connections
+    PORT = 1683 
 
     tcp_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_server.bind((HOST, PORT))
     tcp_server.listen()
     tcp_server.settimeout(1.0)  # Set timeout to check for stop_event
 
-    print(f"Consumer acceptor thread started, listening on port {PORT}")
+    print(f"Thread de aceitação de consumidores iniciada, escutando na porta {PORT}")
 
     while not stop_event.is_set():
         try:
             client_socket, client_address = tcp_server.accept()
-            print(f"Consumer connected from {client_address}")
+            print(f"Consumidor conectado de {client_address}")
             # Create a thread to serve this consumer
             threading.Thread(target=consumer_thread, args=(client_socket,), daemon=True).start()
         except socket.timeout:
             continue  # Continue to check for stop_event
         except Exception as e:
-            print(f"Error accepting consumer connection: {e}")
+            print(f"Erro ao aceitar conexão do consumidor: {e}")
             continue
 
     tcp_server.close()
-    print("Consumer acceptor thread terminated.")
+    print("Thread de aceitação de consumidores terminada.")
 
 def consumer_thread(client_socket):
     """Thread to serve a connected consumer."""
@@ -93,7 +93,7 @@ def consumer_thread(client_socket):
                 data = client_socket.recv(4096)
                 if not data:
                     # Connection closed
-                    print("Client closed the connection.")
+                    print("Cliente fechou a conexão.")
                     stop_consumer_event.set()
                     break
                 # Process the message
@@ -102,7 +102,7 @@ def consumer_thread(client_socket):
                     if control_message.command == 'change_type':
                         new_desired_types = control_message.data
                         if not isinstance(new_desired_types, list) or not all(isinstance(t, int) for t in new_desired_types):
-                            print("Invalid desired types received from consumer.")
+                            print("Tipos desejados inválidos recebidos do consumidor.")
                             stop_consumer_event.set()
                             break
                         with desired_types_lock:
@@ -111,13 +111,13 @@ def consumer_thread(client_socket):
                             for tipo in new_desired_types:
                                 if tipo not in last_seq_sent:
                                     last_seq_sent[tipo] = -1
-                        print(f"Consumer changed desired types to: {desired_types}")
+                        print(f"Consumidor alterou os tipos desejados para: {desired_types}")
                     else:
-                        print(f"Unknown control command: {control_message.command}")
+                        print(f"Comando de controle desconhecido: {control_message.command}")
                 else:
-                    print("Received unknown data from consumer.")
+                    print("Dados desconhecidos recebidos do consumidor.")
         except Exception as e:
-            print(f"Error receiving data from consumer: {e}")
+            print(f"Erro ao receber dados do consumidor: {e}")
             stop_consumer_event.set()
 
     def send_messages():
@@ -138,13 +138,13 @@ def consumer_thread(client_socket):
                                 try:
                                     client_socket.sendall(pickle.dumps(message))
                                 except Exception as e:
-                                    print(f"Error sending message to consumer: {e}")
+                                    print(f"Erro ao enviar mensagem para o consumidor: {e}")
                                     stop_consumer_event.set()
                                     return
                                 last_seq_sent[tipo] = message.seq
                 time.sleep(0.1)  # Avoid tight loop
         except Exception as e:
-            print(f"Error in send_messages thread: {e}")
+            print(f"Erro na thread send_messages: {e}")
             stop_consumer_event.set()
 
     try:
@@ -152,10 +152,10 @@ def consumer_thread(client_socket):
         data = client_socket.recv(4096)
         desired_types = pickle.loads(data)
         if not isinstance(desired_types, list) or not all(isinstance(t, int) for t in desired_types):
-            print("Invalid desired types received from consumer.")
+            print("Tipos desejados inválidos recebidos do consumidor.")
             client_socket.close()
             return
-        print(f"Consumer requested types: {desired_types}")
+        print(f"Consumidor solicitou os tipos: {desired_types}")
 
         last_seq_sent = {tipo: -1 for tipo in desired_types}
 
@@ -169,7 +169,7 @@ def consumer_thread(client_socket):
                         try:
                             client_socket.sendall(pickle.dumps(message))
                         except Exception as e:
-                            print(f"Error sending message to consumer: {e}")
+                            print(f"Erro ao enviar mensagem para o consumidor: {e}")
                             return
                         last_seq_sent[tipo] = message.seq
 
@@ -184,13 +184,13 @@ def consumer_thread(client_socket):
         send_thread.join()
 
     except Exception as e:
-        print(f"Error in consumer thread: {e}")
+        print(f"Erro na thread do consumidor: {e}")
     finally:
         client_socket.close()
-        print("Consumer thread terminated.")
+        print("Thread do consumidor terminada.")
 
 def main():
-    # Start the listener_thread to receive messages from geradores
+    # Start the listener_thread to receive messages from generators
     listener = threading.Thread(target=listener_thread)
     listener.start()
 
@@ -198,16 +198,16 @@ def main():
     consumer_acceptor = threading.Thread(target=consumer_acceptor_thread)
     consumer_acceptor.start()
 
-    # Wait for the user to press enter to stop the difusor
-    input("Pressione enter para encerrar o difusor!\n")
-    print("Encerrando o difusor...")
+    # Wait for the user to press enter to stop the distributor
+    input("Pressione enter para finalizar o difusor!\n")
+    print("Finalizando o difusor...")
     stop_event.set()
 
     # Ensure the listener and acceptor threads have finished
     listener.join()
     consumer_acceptor.join()
 
-    print("\nDifusor finalizado.")
+    print("\ndifusor finalizado.")
 
 if __name__ == '__main__':
     main()

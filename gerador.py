@@ -12,7 +12,7 @@ SERVER = '127.0.0.1'
 PORT = 1682
 dest = (SERVER, PORT)
 
-categorias = {
+categories = {
     "esportes": 1,
     "novidades da internet": 2,
     "eletrônicos": 3,
@@ -22,17 +22,17 @@ categorias = {
 }
 
 def create_rand_num(min_value, max_value) -> int:
-    """Gera um número aleatório entre o valor mínimo e máximo fornecido."""
+    """Generates a random number between the provided minimum and maximum value."""
     return random.randint(min_value, max_value)
 
 def send_udp_message(sock, message):
-    """Envia uma mensagem serializada UDP para o endereço destino."""
+    """Sends a serialized UDP message to the destination address."""
     try:
         serialized_message = pickle.dumps(message)
         sock.sendto(serialized_message, dest)
-        print(f"Sent message: {message.seq}, {message.tipo}, {message.valor}")
+        print(f"Mensagem enviada: seq={message.seq}, tipo={message.tipo}, valor={message.valor}")
     except Exception as e:
-        print(f"Error sending message: {e}")
+        print(f"Erro ao enviar mensagem: {e}")
 
 def gera_msg_tread(fila, seq, tipo, VALOR_MIN, VALOR_MAX, T_MIN, T_MAX):
     """Function to create the generator and send messages continuously."""
@@ -43,11 +43,11 @@ def gera_msg_tread(fila, seq, tipo, VALOR_MIN, VALOR_MAX, T_MIN, T_MAX):
         counter += 1
         time.sleep(random.uniform(T_MIN, T_MAX))
 
-def conf_gerador(i, tipos=[1,2,3,4,5,6]):
+def conf_gerador(i, types=[1,2,3,4,5,6]):
     """Function to configure the generator thread."""
     fila = Queue()
-    print('New Gerador')
-    for t in tipos:
+    print('Novo Gerador')
+    for t in types:
         tmin = create_rand_num(1,10)
         tmax = create_rand_num(1,10)
         tmin, tmax = sorted((tmin, tmax))
@@ -72,15 +72,13 @@ def main():
             print("Por favor, insira um número válido.")
 
     for i in range(num_geradores):
-        print(f'Gerando os tipos dos geradores:')
-        print(f'Ou pressione Enter para gerar todos os valores aleatórios.')
-
+        print(f'Gerando os tipos do gerador {i+1}:')
         qtd_aleatoria = create_rand_num(1, 6)
-        tipos_aleatorios = random.sample(list(categorias.keys()), qtd_aleatoria)
-        print(tipos_aleatorios)
-        tipos = [categorias[tipo] for tipo in tipos_aleatorios]
+        types_aleatorios = random.sample(list(categories.keys()), qtd_aleatoria)
+        print(types_aleatorios)
+        types = [categories[tipo] for tipo in types_aleatorios]
 
-        threading.Thread(target=conf_gerador, args=(i, tipos), daemon=True).start()
+        threading.Thread(target=conf_gerador, args=(i, types), daemon=True).start()
 
     input("Pressione enter para encerrar!")
     print("Encerrando o programa...")
