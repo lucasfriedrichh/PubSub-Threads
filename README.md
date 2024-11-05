@@ -1,5 +1,3 @@
-# TDE - Sockets e Threads - Pub Sub
-
 ### Lucas Friedrich - 168238
 ### Leonardo Salinet - 179770
 
@@ -34,7 +32,8 @@ python3 gerador.py
 ```
 
 Assim que executarmos será criado a quantidade escolhida de geradores:
-![image](https://github.com/user-attachments/assets/938b19b9-f823-4658-8c08-6c8bc7a6987d)
+
+![1- gerador Init](https://github.com/user-attachments/assets/ceee2981-e24b-4957-a7eb-3c746e39c141)
 
 Dessa forma, já temos os geradores criando as notícias.
 
@@ -43,25 +42,50 @@ Dessa forma, já temos os geradores criando as notícias.
 ```bash
 python3 difusor.py
 ```
-![image](https://github.com/user-attachments/assets/23925d3a-fd2f-4730-8949-b99391d29f92)
+![2 - Difusor Init](https://github.com/user-attachments/assets/de814f0d-17a6-4fd9-bace-fa25d8c51794)
 
 
-
-2. Assim que os geradores forem iniciados, podemos executar o difusor, que vai fazer a intermediação e enviar as menssagens para cada cliente com seu respectivo assunto.
+3. Após iniciar o difusor, podemos começar a criar a quantidade desejada de Clientes, respeitando a regra de criar apenas um cliente por terminal.
+Podemos escolher qual tipo de noticia vamos receber.
 ```bash
 python3 cliente.py
 ```
-
-![image](https://github.com/user-attachments/assets/ac3b0074-3f0b-4ba1-8c7e-5282acbc8416)
-
+![3 - Client init](https://github.com/user-attachments/assets/1a593adf-7255-47ab-8347-c5cb18114fa9)
 
 
-2. Assim que os geradores forem iniciados, podemos executar o difusor, que vai fazer a intermediação e enviar as menssagens para cada cliente com seu respectivo assunto 
+4. Programa já está iniciado!
 
-![image](https://github.com/user-attachments/assets/96cc2728-21c3-4404-b724-2a016752b65c)
+## Passo 4: Possibilidades no programa.
 
+1. Alterar tipo de noticia do cliente
+- Clicando 'c' no terminal do cliente, podemos trocar o tipo de informação:
 
+![4 - Alteração de Tipo CLIENTE](https://github.com/user-attachments/assets/3d6ea7e1-1dcd-4134-8f54-196249dcf9a0)
 
-![image](https://github.com/user-attachments/assets/59699b13-fb20-4f82-bd93-0c1fe0cae571)
+- Assim como quando criamos um cliente novo, quando alteramos, recebemos uma mensagem do client no difusor:
 
+![7 - Cliente troca de tipo - DIFUSOR](https://github.com/user-attachments/assets/abe9f29a-eb3d-4e5e-a7b5-a98e8195b554)
+
+2. Finalizar Cliente. 
+- Clicando 'q' no terminal do cliente, finalizar o cliente:
+
+![5 - Cliente fecha conexao - DIFUSOR](https://github.com/user-attachments/assets/3c7f1a67-e9bb-4079-add9-eea17b42d7bc)
+
+- Quando finalizamos o Cliente o difusor recebe uma mensagem.
+
+![6 - fechando o cliente - CLIENTE](https://github.com/user-attachments/assets/621998d6-ef6b-4493-9da8-3946a191d500)
+
+3. Finalizar Difusor
+- Para finalizar o difusor podemos clicar "Enter" em qualquer momento no terminal.
+
+![8 - Finalização difusor - DIFUSOR](https://github.com/user-attachments/assets/b74802d8-434e-494b-9a5e-0d9e9a0da41e)
+
+- Quando o difusor é finalizad, o cliente automaticamente fecha a comunicação e também pode ser finalizado.
+
+![9 - Finalização difusor - CLIENTE](https://github.com/user-attachments/assets/fc74c878-789e-4c63-81df-1f34e6b8ed27)
+
+4. Da mesma forma que podemos finalizar o difusor, podemos finalizar um ou todos os gerados.
+- Escolhendo qual gerador queremos excluir e parar de gerar noticias.
+
+![image](https://github.com/user-attachments/assets/6b65b3e0-2aab-4493-a816-09a5a7ec0ac1)
 
