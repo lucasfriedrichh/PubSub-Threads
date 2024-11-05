@@ -1,23 +1,21 @@
 import socket
 import threading
 import pickle
-import time
-from message import Message, ControlMessage  # Ensure ControlMessage is defined
+from message import Message, ControlMessage  # Certifique-se de que ControlMessage está definido
 
-HOST = '127.0.0.1'  # Distributor's IP address
-PORT = 1683         # TCP port used by the distributor
-stop_event = threading.Event()
-quit_event = threading.Event()
+HOST = '127.0.0.1'  # Endereço IP do difusor
+PORT = 1683         # Porta TCP usada pelo difusor
 
-def receive_messages(sock, stop_event):
+def receive_messages(sock, stop_event, quit_event):
     """Thread function to receive messages from the distributor."""
     while not stop_event.is_set():
         try:
             data = sock.recv(4096)
             if not data:
                 # Connection closed by distributor
-                print("Conexão fechada pelo distribuidor.")
+                print("Conexão fechada pelo difusor.")
                 stop_event.set()
+                quit_event.set()
                 break
             # Deserialize the message
             message = pickle.loads(data)
@@ -25,13 +23,20 @@ def receive_messages(sock, stop_event):
                 print(f"Mensagem recebida: seq={message.seq}, tipo={message.tipo}, valor={message.valor}")
             else:
                 print("Dados desconhecidos recebidos.")
+        except ConnectionResetError:
+            # Distributor forcibly closed the connection
+            print("Conexão fechada pelo difusor.")
+            stop_event.set()
+            quit_event.set()
+            break
         except Exception as e:
             print(f"Erro ao receber dados: {e}")
             stop_event.set()
+            quit_event.set()
             break
 
 def user_input_thread(sock, stop_event, quit_event):
-    """Thread function to wait for user input to change type or exit."""
+    """Thread function to handle user input to change type or exit."""
     while not stop_event.is_set():
         print("\nDigite 'c' para mudar o tipo, 'q' para sair:")
         user_input = input().strip()
@@ -49,8 +54,9 @@ def user_input_thread(sock, stop_event, quit_event):
             except ValueError:
                 print("Entrada inválida. Por favor, insira um número válido.")
             except Exception as e:
-                print(f"Falha ao enviar solicitação de mudança de tipo para o distribuidor: {e}")
+                print(f"Falha ao enviar solicitação de mudança de tipo para o difusor: {e}")
                 stop_event.set()
+                quit_event.set()
                 break
         elif user_input.lower() == 'q':
             stop_event.set()
@@ -60,10 +66,12 @@ def user_input_thread(sock, stop_event, quit_event):
         else:
             print("Entrada inválida. Por favor, digite 'c' ou 'q'.")
 
+    print("Thread de entrada do usuário encerrada.")
+
 def main():
     while True:
-        stop_event.clear()
-        quit_event.clear()
+        stop_event = threading.Event()
+        quit_event = threading.Event()
         # Prompt the user for the desired type
         try:
             desired_type = int(input("Digite o tipo de informação desejado (1-6): ").strip())
@@ -78,43 +86,45 @@ def main():
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((HOST, PORT))
-            print(f"Conectado ao distribuidor em {HOST}:{PORT}")
+            print(f"Conectado ao difusor em {HOST}:{PORT}")
         except Exception as e:
-            print(f"Falha ao conectar-se ao distribuidor: {e}")
+            print(f"Falha ao conectar-se ao difusor: {e}")
             return
 
         # Send the desired type to the distributor
         try:
             desired_types = [desired_type]  # The distributor expects a list of types
             sock.sendall(pickle.dumps(desired_types))
-            print(f"Tipo {desired_type} solicitado ao distribuidor.")
+            print(f"Tipo {desired_type} solicitado ao difusor.")
         except Exception as e:
-            print(f"Falha ao enviar o tipo desejado para o distribuidor: {e}")
+            print(f"Falha ao enviar o tipo desejado para o difusor: {e}")
             sock.close()
             return
 
         # Start the thread to receive messages
-        recv_thread = threading.Thread(target=receive_messages, args=(sock, stop_event))
+        recv_thread = threading.Thread(target=receive_messages, args=(sock, stop_event, quit_event))
         recv_thread.start()
 
-        # Start the thread to handle user input
+        # Start the thread to handle user input (set as daemon)
         input_thread = threading.Thread(target=user_input_thread, args=(sock, stop_event, quit_event))
+        input_thread.daemon = True  # This allows the program to exit even if input() is waiting
         input_thread.start()
 
-        # Wait for both threads to finish
+        # Wait for the receive_messages thread to finish
         recv_thread.join()
-        input_thread.join()
 
         # Close the socket connection
         sock.close()
 
-        # Check if the user wants to change type or exit
+        # Check if the client should exit
         if quit_event.is_set():
-            # User chose to quit
+            # Exit the main loop
             break
         else:
-            # User chose to change type
+            # Restart the loop (e.g., if user changed the type)
             continue
+
+    print("Cliente finalizado.")
 
 if __name__ == '__main__':
     main()

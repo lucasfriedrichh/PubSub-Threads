@@ -1,0 +1,4 @@
+Lucas Friedrich - 168238
+Leonardo salinet - 179770
+
+https://github.com/lucasfriedrichh/PubSub-Threads
