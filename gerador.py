@@ -22,11 +22,11 @@ categories = {
 }
 
 def create_rand_num(min_value, max_value) -> int:
-    """Generates a random number between the provided minimum and maximum value."""
+    """Gera um número aleatório entre o mínimo e o máximo fornecidos."""
     return random.randint(min_value, max_value)
 
 def send_udp_message(sock, message):
-    """Sends a serialized UDP message to the destination address."""
+    """Envia uma mensagem UDP serializada para o endereço de destino."""
     try:
         serialized_message = pickle.dumps(message)
         sock.sendto(serialized_message, dest)
@@ -34,17 +34,17 @@ def send_udp_message(sock, message):
     except Exception as e:
         print(f"Erro ao enviar mensagem: {e}")
 
-def gera_msg_tread(fila, seq, tipo, VALOR_MIN, VALOR_MAX, T_MIN, T_MAX):
-    """Function to create the generator and send messages continuously."""
+def gera_msg_tread(fila, seq, tipo, VALOR_MIN, VALOR_MAX, T_MIN, T_MAX, stop_event):
+    """Função para criar o gerador e enviar mensagens continuamente."""
     counter = 0 
-    while True:
+    while not stop_event.is_set():
         valor = create_rand_num(VALOR_MIN, VALOR_MAX)
         fila.put(Message(counter, tipo, valor))
         counter += 1
         time.sleep(random.uniform(T_MIN, T_MAX))
 
-def conf_gerador(i, types=[1,2,3,4,5,6]):
-    """Function to configure the generator thread."""
+def conf_gerador(i, types=[1,2,3,4,5,6], stop_event=None):
+    """Função para configurar a thread do gerador."""
     fila = Queue()
     print('Novo Gerador')
     for t in types:
@@ -52,8 +52,8 @@ def conf_gerador(i, types=[1,2,3,4,5,6]):
         tmax = create_rand_num(1,10)
         tmin, tmax = sorted((tmin, tmax))
         vmax = create_rand_num(1,200)
-        threading.Thread(target=gera_msg_tread, args=(fila, None, t, 1, vmax, tmin, tmax), daemon=True).start()
-    while True:
+        threading.Thread(target=gera_msg_tread, args=(fila, None, t, 1, vmax, tmin, tmax, stop_event), daemon=True).start()
+    while not stop_event.is_set():
         if not fila.empty():
             locker.acquire()
             message = fila.get()
@@ -64,6 +64,7 @@ def conf_gerador(i, types=[1,2,3,4,5,6]):
             time.sleep(0.1)
 
 def main():
+    generator_threads = []
     while True:
         try:
             num_geradores = int(input("Informe a quantidade de geradores a serem criados: "))
@@ -81,9 +82,50 @@ def main():
         print(types_aleatorios)
         types = [categories[tipo] for tipo in types_aleatorios]
 
-        threading.Thread(target=conf_gerador, args=(i, types), daemon=True).start()
+        stop_event = threading.Event()
+        t = threading.Thread(target=conf_gerador, args=(i, types, stop_event), daemon=True)
+        t.start()
+        generator_threads.append({'thread': t, 'stop_event': stop_event, 'id': i+1})
 
-    input("Pressione enter para encerrar!")
+    while True:
+        user_input = input("Pressione Enter para excluir um gerador ou digite 'sair' para encerrar: ")
+        if user_input.lower() == 'sair':
+            break
+        else:
+            if len(generator_threads) == 0:
+                print("Não há geradores ativos.")
+                continue
+            elif len(generator_threads) == 1:
+                # Se houver apenas um gerador, finalizar o programa
+                print("Apenas um gerador restante. Encerrando o programa...")
+                gen_to_stop = generator_threads[0]
+                gen_to_stop['stop_event'].set()
+                generator_threads.pop(0)
+                break
+            else:
+                print("Geradores ativos:")
+                for idx, gen in enumerate(generator_threads):
+                    print(f"{idx+1}: Gerador {gen['id']}")
+                choice = input("Informe o número do gerador a ser excluído ou 'sair' para encerrar: ")
+                if choice.lower() == 'sair':
+                    break
+                elif choice == '':
+                    continue  # Se o usuário apenas pressionar Enter, voltar ao início
+                try:
+                    num = int(choice)
+                    if 1 <= num <= len(generator_threads):
+                        gen_to_stop = generator_threads[num-1]
+                        gen_to_stop['stop_event'].set()
+                        print(f"Gerador {gen_to_stop['id']} excluído.")
+                        generator_threads.pop(num-1)
+                    else:
+                        print("Número inválido.")
+                except ValueError:
+                    print("Por favor, insira um número válido.")
+
+    # Encerrar todos os geradores restantes
+    for gen in generator_threads:
+        gen['stop_event'].set()
     print("Encerrando o programa...")
 
 if __name__ == "__main__":
