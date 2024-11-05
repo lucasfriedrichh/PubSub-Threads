@@ -45,5 +45,3 @@ Dessa forma, já temos os geradores criando as notícias.
 ```bash
 python3 difusor.py
 ```
-![image](https://github.com/user-attachments/assets/a935c122-0f38-4309-b922-415a0a242d0d)
-
