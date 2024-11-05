@@ -3,8 +3,8 @@ import threading
 import pickle
 from message import Message, ControlMessage  # Certifique-se de que ControlMessage está definido
 
-HOST = '127.0.0.1'  # Endereço IP do difusor
-PORT = 1683         # Porta TCP usada pelo difusor
+HOST = '127.0.0.1'  
+PORT = 1683
 
 def receive_messages(sock, stop_event, quit_event):
     """Thread function to receive messages from the distributor."""
@@ -105,23 +105,17 @@ def main():
         recv_thread = threading.Thread(target=receive_messages, args=(sock, stop_event, quit_event))
         recv_thread.start()
 
-        # Start the thread to handle user input (set as daemon)
         input_thread = threading.Thread(target=user_input_thread, args=(sock, stop_event, quit_event))
         input_thread.daemon = True  # This allows the program to exit even if input() is waiting
         input_thread.start()
 
-        # Wait for the receive_messages thread to finish
         recv_thread.join()
-
-        # Close the socket connection
         sock.close()
 
         # Check if the client should exit
         if quit_event.is_set():
-            # Exit the main loop
             break
         else:
-            # Restart the loop (e.g., if user changed the type)
             continue
 
     print("Cliente finalizado.")
